@@ -279,6 +279,7 @@ function main() {
 
     clone_onos
     
+    create_atomix
     create_onos
     apply_onos_config
 }
