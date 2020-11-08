@@ -141,7 +141,7 @@ create_net_ine(){
 
 pull_if_not_present(){
   echo "Pulling $1"
-  if [ "$(docker images --format '{{.Repository}}:{{.Tag}}' )" != *"$1"* ]; then
+  if [ "$(sudo docker images --format '{{.Repository}}:{{.Tag}}' )" != *"$1"* ]; then
     sudo docker pull $1 >/dev/null
   fi
 }
