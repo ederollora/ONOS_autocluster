@@ -246,7 +246,7 @@ apply_atomix_config(){
   do
     pos=$((i-1))
     cd
-    ./onos/tools/test/bin/atomix-gen-config "${allocatedAtomixIps[$pos]}" /tmp/atomix-$i.conf "${allocatedAtomixIps[*]}" >/dev/null
+    ./onos/tools/test/bin/atomix-gen-config "${allocatedAtomixIps[$pos]}" /tmp/atomix-$i.conf ${allocatedAtomixIps[*]} >/dev/null
     sudo docker cp /tmp/atomix-$i.conf atomix-$i:/opt/atomix/conf/atomix.conf
     sudo docker container start atomix-$i >/dev/null
     echo "Starting container atomix-$i"
