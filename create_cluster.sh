@@ -50,11 +50,13 @@ parse_params() {
           *)                   break ;;
       esac
   done
+  onosImage="onosproject/onos:$onosVersion"
   echo "atomix-version: $atomixVersion"
   echo "onos-version: $onosVersion"
   echo "atomix-containers: $atomixNum"
   echo "onos-containers: $onosNum"
   echo "subnet: $customSubnet"
+  read -p "Continue? "
 }
 
 
