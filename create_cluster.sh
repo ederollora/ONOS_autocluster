@@ -8,7 +8,9 @@ creatorKey="creator"
 creatorValue="onos-cluster-create"
 
 atomixVersion="3.1.5"
+atomixImage="atomix/atomix:$atomixVersion"
 onosVersion="2.2.1"
+onosImage="onosproject/onos:$onosVersion"
 atomixNum=3
 onosNum=3
 
@@ -48,11 +50,13 @@ parse_params() {
           *)                   break ;;
       esac
   done
+  onosImage="onosproject/onos:$onosVersion"
   echo "atomix-version: $atomixVersion"
   echo "onos-version: $onosVersion"
   echo "atomix-containers: $atomixNum"
   echo "onos-containers: $onosNum"
   echo "subnet: $customSubnet"
+  read -p "Continue? "
 }
 
 
@@ -137,15 +141,13 @@ create_net_ine(){
   fi
 }
 
-pull_atomix(){
-  echo "Pulling Atomix:$atomixVersion"
-  sudo docker pull atomix/atomix:$atomixVersion >/dev/null
+pull_if_not_present(){
+  echo "Pulling $1"
+  if [[ "$(sudo docker images --format '{{.Repository}}:{{.Tag}}')" != *"$1"* ]]; then
+    sudo docker pull $1 >/dev/null
+  fi
 }
 
-pull_onos(){
-  echo "Pulling ONOS:$onosVersion"
-  sudo docker pull onosproject/onos:$onosVersion >/dev/null
-}
 
 clone_onos(){
 
@@ -181,7 +183,7 @@ create_atomix(){
       #if [[ ! " ${usedIps[@]} " =~ " ${currentIp} " ]]; then
       if ! containsElement $currentIp "${usedIps[@]}";
       then
-        sudo docker create -t --name atomix-$i --hostname atomix-$i --net $netName --ip $currentIp atomix/atomix:$atomixVersion >/dev/null
+        sudo docker create -t --name atomix-$i --hostname atomix-$i --net $netName --ip $currentIp $atomixImage >/dev/null
         echo "Creating atomix-$i container with IP: $currentIp"
         goodIP=$currentIp
       fi
@@ -227,7 +229,7 @@ create_onos(){
           --net $netName \
           --ip $currentIp \
           -e ONOS_APPS="drivers,openflow-base,netcfghostprovider,lldpprovider,gui2" \
-          onosproject/onos:$onosVersion >/dev/null
+          $onosImage >/dev/null
 
         goodIP=$currentIp
       fi
@@ -246,7 +248,7 @@ apply_atomix_config(){
   do
     pos=$((i-1))
     cd
-    ./onos/tools/test/bin/atomix-gen-config "${allocatedAtomixIps[$pos]}" /tmp/atomix-$i.conf "${allocatedAtomixIps[*]}" >/dev/null
+    ./onos/tools/test/bin/atomix-gen-config "${allocatedAtomixIps[$pos]}" /tmp/atomix-$i.conf ${allocatedAtomixIps[*]} >/dev/null
     sudo docker cp /tmp/atomix-$i.conf atomix-$i:/opt/atomix/conf/atomix.conf
     sudo docker container start atomix-$i >/dev/null
     echo "Starting container atomix-$i"
@@ -267,26 +269,20 @@ apply_onos_config(){
   done
 }
 
-
-
 function main() {
 
     parse_params "$@"
 
     create_net_ine
-
-    pull_atomix
+    pull_if_not_present $atomixImage
+    pull_if_not_present $onosImage
+    clone_onos
+    
     create_atomix
     apply_atomix_config
-
-    clone_onos
-
-    pull_onos
     create_onos
     apply_onos_config
 }
-
-
 
 # Make it rain
 main "$@"
